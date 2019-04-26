@@ -20,7 +20,7 @@ interface Register {
   "ONE HUNDRED": number;
 }
 
-const CURRENCY =   {
+const CURRENCY: Register = {
   "PENNY": 0.01,
   "NICKEL": 0.05,
   "DIME": 0.1,
@@ -48,31 +48,28 @@ export function checkCashRegister(price: number, cash: number, cid: Denomination
   } else if (totalCashInDrawer(REGISTER) === changeDue) {
     [result.status,result.change] = ['CLOSED', cid]
   } else {
-      let keys = Object.keys(REGISTER).reverse()
+      let keys = Object.keys(REGISTER).reverse();
       for (let key of keys) {
         if (REGISTER[key] > 0) {
-          console.log('REGISTER[key]:',key, REGISTER[key])
-          var denom = CURRENCY[key]
-          var changeTuple = [key, 0] as Denomination
-          while(REGISTER[key] - denom >= 0 || changeDue - denom >= 0) {
-            REGISTER[key] -= denom
-            changeDue -= denom
-            changeTuple[1] += denom
+          var denom = round(CURRENCY[key]);
+          var changeTuple: Denomination = [key, 0];
+          while (REGISTER[key] - denom >= 0 && round(changeDue - denom) >= 0) {
+            REGISTER[key] = round(REGISTER[key] - denom);
+            changeDue = round(changeDue - denom);
+            changeTuple[1] = round(changeTuple[1] + denom);
           }
-          changeTuple[1] = round(changeTuple[1])
-          result.change.push(changeTuple)
-          console.log('LENGTH', result.change.length)
-        }        
+          result.change.push(changeTuple);
+        }
       }
       if (changeDue > 0) {
-        result.status = 'INSUFFICIENT_FUNDS'
-        result.change = [] as Denomination[]
-      } else {
-        result.status = 'OPEN'
+        [result.status, result.change] = ['INSUFFICIENT_FUNDS', []];
+        
+      }
+      else {
+        [result.status, result.change] = ['OPEN', result.change.filter(c => c[1] !== 0)];        
       }
     }
     
-  console.log({changeDue, result: result.change})
   return result
 }
 
