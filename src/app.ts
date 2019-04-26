@@ -20,16 +20,16 @@ interface Register {
   "ONE HUNDRED": number;
 }
 
-enum Currency  {
-  "PENNY"= 0.01,
-  "NICKEL"= 0.05,
-  "DIME"= 0.1,
-  "QUARTER"= 0.25,
-  "ONE"= 1,
-  "FIVE"= 5,
-  "TEN"= 10,
-  "TWENTY"= 20,
-  "ONE HUNDRED"= 100,
+const CURRENCY =   {
+  "PENNY": 0.01,
+  "NICKEL": 0.05,
+  "DIME": 0.1,
+  "QUARTER": 0.25,
+  "ONE": 1,
+  "FIVE": 5,
+  "TEN": 10,
+  "TWENTY": 20,
+  "ONE HUNDRED": 100,
 }
 
 /**
@@ -41,12 +41,38 @@ enum Currency  {
  */
 export function checkCashRegister(price: number, cash: number, cid: Denomination[]): Result {
   const result = {status: '' as Status, change: [] as Denomination[]} as Result
-  let changeDue = round(cash - price)
-  const cashInDrawer = generateRegister(cid)
-  const TOTAL = totalCashInDrawer(cashInDrawer)
-  console.log({TOTAL})
-  const STATUS: Status = changeDue > TOTAL ? 'INSUFFICIENT_FUNDS' : 'CLOSED'
-  result.status = STATUS
+  var changeDue = round(cash - price)
+  const REGISTER = generateRegister(cid)
+  if (totalCashInDrawer(REGISTER) < changeDue) {
+    result.status = 'INSUFFICIENT_FUNDS'
+  } else if (totalCashInDrawer(REGISTER) === changeDue) {
+    [result.status,result.change] = ['CLOSED', cid]
+  } else {
+      let keys = Object.keys(REGISTER).reverse()
+      for (let key of keys) {
+        if (REGISTER[key] > 0) {
+          console.log('REGISTER[key]:',key, REGISTER[key])
+          var denom = CURRENCY[key]
+          var changeTuple = [key, 0] as Denomination
+          while(REGISTER[key] - denom >= 0 || changeDue - denom >= 0) {
+            REGISTER[key] -= denom
+            changeDue -= denom
+            changeTuple[1] += denom
+          }
+          changeTuple[1] = round(changeTuple[1])
+          result.change.push(changeTuple)
+          console.log('LENGTH', result.change.length)
+        }        
+      }
+      if (changeDue > 0) {
+        result.status = 'INSUFFICIENT_FUNDS'
+        result.change = [] as Denomination[]
+      } else {
+        result.status = 'OPEN'
+      }
+    }
+    
+  console.log({changeDue, result: result.change})
   return result
 }
 
